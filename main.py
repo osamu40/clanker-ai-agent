@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -24,7 +25,14 @@ def main():
             }
         ],
     )
+    prompt_tokens = response.usage.prompt_tokens
+    completion_tokens = response.usage.completion_tokens
+    if not response.usage:
+        raise RuntimeError("failed API request")
 
+    print(
+        f"Prompt tokens: {prompt_tokens}\nResponse tokens: {completion_tokens}\n\nResponse:"
+    )
     print(response.choices[0].message.content)
 
 
