@@ -18,9 +18,10 @@ def generate_content(client, messages) -> str:
     prompt_tokens = response.usage.prompt_tokens
     completion_tokens = response.usage.completion_tokens
 
-    print(
-        f"Prompt tokens: {prompt_tokens}\nResponse tokens: {completion_tokens}\n\nResponse:"
-    )
+    print(f"Prompt tokens: {prompt_tokens}")
+    print(f"Response tokens: {completion_tokens}\n")
+    print("Response:")
+
     return response.choices[0].message.content
 
 
