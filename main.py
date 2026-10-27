@@ -1,8 +1,27 @@
-import os
 import argparse
+import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
+
+
+def generate_content(client, messages) -> str:
+
+    response = client.chat.completions.create(
+        model="openrouter/free",
+        messages=messages,
+    )
+
+    if not response.usage:
+        raise RuntimeError("failed API request")
+
+    prompt_tokens = response.usage.prompt_tokens
+    completion_tokens = response.usage.completion_tokens
+
+    print(
+        f"Prompt tokens: {prompt_tokens}\nResponse tokens: {completion_tokens}\n\nResponse:"
+    )
+    return response.choices[0].message.content
 
 
 def main():
@@ -22,24 +41,12 @@ def main():
         api_key=api_key,
     )
 
-    response = client.chat.completions.create(
-        model="openrouter/free",
-        messages=[
-            {
-                "role": "user",
-                "content": f"{args.user_prompt}\nUse one paragraph",
-            }
-        ],
-    )
-    prompt_tokens = response.usage.prompt_tokens
-    completion_tokens = response.usage.completion_tokens
-    if not response.usage:
-        raise RuntimeError("failed API request")
+    messages = [
+        {"role": "user", "content": f"{args.user_prompt}, short answer"},
+    ]
 
-    print(
-        f"Prompt tokens: {prompt_tokens}\nResponse tokens: {completion_tokens}\n\nResponse:"
-    )
-    print(response.choices[0].message.content)
+    reply = generate_content(client, messages)
+    print(reply)
 
 
 if __name__ == "__main__":
