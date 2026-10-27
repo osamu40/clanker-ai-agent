@@ -27,7 +27,7 @@ def main():
         messages=[
             {
                 "role": "user",
-                "content": f"{args.user_prompt}\nUse at most two paragraphs",
+                "content": f"{args.user_prompt}\nUse one paragraph",
             }
         ],
     )
