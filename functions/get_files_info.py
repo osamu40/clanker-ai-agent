@@ -1,7 +1,7 @@
 import os
 
 
-# List files
+# Validate Path
 def get_files_info(working_directory: str, directory: str = ".") -> str:
 
     try:
@@ -23,8 +23,33 @@ def get_files_info(working_directory: str, directory: str = ".") -> str:
         if not path.isdir(target_dir):
             return f'Error: "{directory}" is not a directory'
 
-        return f'Success: "{directory}" is within the working directory'
+        return list_files(target_dir)
 
     # Catch other errors gracefully
+    except Exception as e:
+        return f"Error: {e}"
+
+
+# List Files
+def list_files(target_directory) -> str:
+    try:
+        dir_items = os.listdir(target_directory)
+        dir_info = []
+
+        for item in dir_items:
+            name = item
+            path = target_directory + "/" + name
+            size = os.path.getsize(path)
+            is_dir = False
+
+            if os.path.isdir(path):
+                is_dir = True
+
+            file_info_string = f" - {name}: file_size={size} bytes, is_dir={is_dir}"
+            dir_info.append(file_info_string)
+
+        data_string = ("\n").join(dir_info)
+        return data_string
+
     except Exception as e:
         return f"Error: {e}"
