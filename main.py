@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 
-def generate_content(client, messages) -> str:
+def generate_content(client, messages, args) -> str:
 
     response = client.chat.completions.create(
         model="openrouter/free",
@@ -18,8 +18,13 @@ def generate_content(client, messages) -> str:
     prompt_tokens = response.usage.prompt_tokens
     completion_tokens = response.usage.completion_tokens
 
-    print(f"Prompt tokens: {prompt_tokens}")
-    print(f"Response tokens: {completion_tokens}\n")
+    if args.verbose:
+        print(f"User prompt: {args.user_prompt}")
+        print("==============================")
+        print(f"Prompt tokens: {prompt_tokens}")
+        print(f"Response tokens: {completion_tokens}")
+
+    print("==============================")
     print("Response:")
 
     return response.choices[0].message.content
@@ -29,6 +34,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Chatbot")
     parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
 
     load_dotenv()
@@ -43,10 +49,10 @@ def main():
     )
 
     messages = [
-        {"role": "user", "content": f"{args.user_prompt}, short answer"},
+        {"role": "user", "content": f"{args.user_prompt}, brief answer"},
     ]
 
-    reply = generate_content(client, messages)
+    reply = generate_content(client, messages, args)
     print(reply)
 
 
