@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from call_function import available_functions
+from call_function import available_functions, call_function
 from prompts import system_prompt
 
 
@@ -20,13 +20,13 @@ def generate_content(client, messages, args) -> str | None:
     if not response.usage:
         raise RuntimeError("failed API request")
 
-    prompt_tokens = response.usage.prompt_tokens
-    completion_tokens = response.usage.completion_tokens
-
     message = response.choices[0].message
     reply = ""
 
     if args.verbose:
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+
         verbose_string = "\n".join(
             [
                 f"User prompt: {args.user_prompt}",
@@ -41,13 +41,18 @@ def generate_content(client, messages, args) -> str | None:
     if message.tool_calls:
         calls = []
         for tool_call in message.tool_calls:
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            calls.append(
-                f"Calling function: {tool_call.function.name}({function_args})"
-            )
+            result_message = call_function(tool_call, args.verbose)
+
+            if not result_message["content"]:
+                raise Exception("no content in tool response")
+
+            result_string = f"-> {result_message['content']}"
+            calls.append(result_string)
 
         call_string = "\n".join(calls)
-        reply += call_string
+
+        if args.verbose:
+            reply += call_string
 
     else:
         reply += f"Response:\n{message.content}"
