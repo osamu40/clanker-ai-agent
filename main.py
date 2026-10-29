@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
+from prompts import system_prompt
 
 
 def generate_content(client, messages, args) -> str:
@@ -49,6 +50,7 @@ def main():
     )
 
     messages = [
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"{args.user_prompt}, brief answer"},
     ]
 
