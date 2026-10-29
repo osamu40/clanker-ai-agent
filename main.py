@@ -1,16 +1,20 @@
 import argparse
+import json
 import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from call_function import available_functions
 from prompts import system_prompt
 
 
-def generate_content(client, messages, args) -> str:
+def generate_content(client, messages, args) -> str | None:
 
     response = client.chat.completions.create(
         model="openrouter/free",
         messages=messages,
+        tools=available_functions,
     )
 
     if not response.usage:
@@ -19,16 +23,36 @@ def generate_content(client, messages, args) -> str:
     prompt_tokens = response.usage.prompt_tokens
     completion_tokens = response.usage.completion_tokens
 
+    message = response.choices[0].message
+    reply = ""
+
     if args.verbose:
-        print(f"User prompt: {args.user_prompt}")
-        print("==============================")
-        print(f"Prompt tokens: {prompt_tokens}")
-        print(f"Response tokens: {completion_tokens}")
+        verbose_string = "\n".join(
+            [
+                f"User prompt: {args.user_prompt}",
+                "==============================",
+                f"Prompt tokens: {prompt_tokens}",
+                f"Response tokens: {completion_tokens}",
+                "==============================\n",
+            ]
+        )
+        reply += verbose_string
 
-    print("==============================")
-    print("Response:")
+    if message.tool_calls:
+        calls = []
+        for tool_call in message.tool_calls:
+            function_args = json.loads(tool_call.function.arguments or "{}")
+            calls.append(
+                f"Calling function: {tool_call.function.name}({function_args})"
+            )
 
-    return response.choices[0].message.content
+        call_string = "\n".join(calls)
+        reply += call_string
+
+    else:
+        reply += f"Response:\n{message.content}"
+
+    return reply
 
 
 def main():
