@@ -1,9 +1,9 @@
 import argparse
-import json
 import os
+import sys
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 from call_function import available_functions, call_function
 from prompts import system_prompt
@@ -21,7 +21,8 @@ def generate_content(client, messages, args) -> str | None:
         raise RuntimeError("failed API request")
 
     message = response.choices[0].message
-    reply = ""
+    messages.append(message)
+    reply_list = []
 
     if args.verbose:
         prompt_tokens = response.usage.prompt_tokens
@@ -29,6 +30,7 @@ def generate_content(client, messages, args) -> str | None:
 
         verbose_string = "\n".join(
             [
+                "\n==============================",
                 f"User prompt: {args.user_prompt}",
                 "==============================",
                 f"Prompt tokens: {prompt_tokens}",
@@ -36,28 +38,24 @@ def generate_content(client, messages, args) -> str | None:
                 "==============================\n",
             ]
         )
-        reply += verbose_string
+        reply_list.append(verbose_string)
 
     if message.tool_calls:
-        calls = []
+        result_message = None
+
         for tool_call in message.tool_calls:
             result_message = call_function(tool_call, args.verbose)
 
             if not result_message["content"]:
                 raise Exception("no content in tool response")
+            messages.append(result_message)
 
-            result_string = f"-> {result_message['content']}"
-            calls.append(result_string)
-
-        call_string = "\n".join(calls)
-
-        if args.verbose:
-            reply += call_string
-
+        return None
     else:
-        reply += f"Response:\n{message.content}"
+        response_string = f"\nResponse:\n{message.content}"
+        reply_list.append(response_string)
 
-    return reply
+    return "\n".join(reply_list)
 
 
 def main():
@@ -83,8 +81,20 @@ def main():
         {"role": "user", "content": f"{args.user_prompt}, brief answer"},
     ]
 
-    reply = generate_content(client, messages, args)
-    print(reply)
+    reply = ""
+    for _ in range(20):
+        try:
+            reply = generate_content(client, messages, args)
+
+        except RateLimitError as e:
+            print(f"Error: rate limited by the API ({e.status_code}). Try again later.")
+
+        if reply:
+            print(reply)
+            break
+    else:
+        print("Error: ran out of iterations")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
