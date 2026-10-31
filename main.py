@@ -88,6 +88,7 @@ def main():
 
         except RateLimitError as e:
             print(f"Error: rate limited by the API ({e.status_code}). Try again later.")
+            sys.exit(1)
 
         if reply:
             print(reply)

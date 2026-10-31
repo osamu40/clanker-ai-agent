@@ -11,3 +11,10 @@ wheels/
 
 # environment variables
 .env
+
+# Local code review notes
+suggestions.txt
+
+# tests 
+
+test_*
